@@ -19,55 +19,49 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Create Deployment Directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: mkdir -p ~/bankapp
-
-      - name: Copy app-tier.yml to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "app-tier.yml"
-          target: "~/bankapp"
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          #----------------------
+          envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY,IMAGE_TAG
           script: |
-            # Login to ECR
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+            # Registry URL ko build karein
+            ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+            
+            # 1. Login to ECR
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
             cd ~/bankapp
 
-            # Fetch secrets from Secrets Manager and create .env
+            # 2. Get Secrets and create .env
             aws secretsmanager get-secret-value --secret-id bankapp/prod-secrets --query SecretString --output text > secrets.json
 
-            # Extract variables and write to .env
             echo "DB_HOST=$(jq -r .DB_HOST secrets.json)" > .env
             echo "DB_PORT=$(jq -r .DB_PORT secrets.json)" >> .env
             echo "DB_NAME=$(jq -r .DB_NAME secrets.json)" >> .env
             echo "DB_USER=$(jq -r .DB_USER secrets.json)" >> .env
             echo "DB_PASSWORD=$(jq -r .DB_PASSWORD secrets.json)" >> .env
             echo "OLLAMA_URL=$(jq -r .OLLAMA_URL secrets.json)" >> .env
-            echo "ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com" >> .env
-            echo "ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY }}" >> .env
-            echo "IMAGE_TAG=${{ github.sha }}" >> .env
+            
+            # Docker variables mapping
+            echo "ECR_REGISTRY=$ECR_REGISTRY" >> .env
+            echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> .env
+            echo "IMAGE_TAG=$IMAGE_TAG" >> .env
 
-            # Clean up
             rm secrets.json
 
-            # Pull and Deploy using the app-tier.yml transferred via SCP
+            # 3. Pull and Deploy
             docker compose -f app-tier.yml pull
-            docker compose -f app-tier.yml up -d --build
+            docker compose -f app-tier.yml up -d
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: "781970762520"
+          ECR_REPOSITORY: "banking-app-devsecops-k8s"
+          IMAGE_TAG: ${{ github.sha }}
+
 
   # ============================================================
   # GATE 9: DAST - Dynamic Application Security Testing
