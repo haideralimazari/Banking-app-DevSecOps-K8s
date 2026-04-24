@@ -1,11 +1,11 @@
 # Build stage 
-FROM gcr.io/distroless/java21-debian12 AS build
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 COPY . .
 RUN chmod +x mvnw && ./mvnw clean package -DskipTests -B
 
 # Run stage - 
-FROM eclipse-temurin:21-jre-alpine
+FROM gcr.io/distroless/java21-debian12
 WORKDIR /app
 
 # Pull latest security patches for OS libraries
