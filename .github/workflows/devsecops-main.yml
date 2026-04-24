@@ -9,6 +9,9 @@ on:
       - 'LICENSE'
       - 'screenshots/**'
       - 'scripts/**'
+permissions:
+  id-token: write   
+  contents: read      
   workflow_dispatch:
 permissions:
   id-token: write
