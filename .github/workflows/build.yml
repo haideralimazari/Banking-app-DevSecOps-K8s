@@ -62,7 +62,7 @@ jobs:
         with:
           image-ref: bankapp:scan-${{ github.sha }}
           format: 'table'
-          exit-code: '0'         
+          exit-code: '0'         # Enforce: fail pipeline on CRITICAL/findings
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL'

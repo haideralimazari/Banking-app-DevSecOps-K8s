@@ -6,12 +6,7 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-      - 'LICENSE'
-      - 'screenshots/**'
-      - 'scripts/**'
-permissions:
-  id-token: write   
-  contents: read      
+      - 'scripts/**'     
   workflow_dispatch:
 permissions:
   id-token: write
