@@ -1,21 +1,20 @@
-# Build stage 
+# 1. Build Stage
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 COPY . .
 RUN chmod +x mvnw && ./mvnw clean package -DskipTests -B
 
-# Run stage - 
-FROM gcr.io/distroless/java21-debian12
+# 2. Run Stage
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Pull latest security patches for OS libraries
-RUN apk update && apk upgrade --no-cache
+# Security Hardening
+RUN apk update && apk upgrade --no-cache && \
+    addgroup -S devsecops && adduser -S -G devsecops devsecops
 
-# Create a non-root user for security
-RUN addgroup -S devsecops && adduser -S -G devsecops devsecops
 USER devsecops
 
-# Copy only the built artifact from the build stage
+# Copy JAR
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
