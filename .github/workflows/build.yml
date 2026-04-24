@@ -1,4 +1,4 @@
-name: Build - Container Build & Push
+name: Build_Container & Push
 
 on:
   workflow_call:
@@ -39,7 +39,7 @@ jobs:
   # GATE 6: CONTAINER IMAGE SCAN - Trivy
   # ============================================================
   image_scan:
-    name: Container Scan - Trivy
+    name: Container Scan-Trivy
     runs-on: ubuntu-latest
     needs: build
     steps:

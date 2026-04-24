@@ -1,8 +1,8 @@
-name: DevSecOps Main Pipeline
+name: BankApp DevSecOps Pipeline
 
 on:
   push:
-    branches: [ main, devsecops, k8s ]
+    branches: [ main ]
     paths-ignore:
       - '**.md'
       - '.gitignore'
