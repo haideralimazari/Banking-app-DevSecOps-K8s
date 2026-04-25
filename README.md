@@ -1,319 +1,154 @@
 <div align="center">
 
-# DevSecOps Banking Application
+# BankApp DevSecOps Pipeline
 
-A high-performance, containerized financial platform built with Spring Boot 3, Java 21, and integrated Contextual AI. This project implements a secure "DevSecOps Pipeline" using GitHub Actions, OIDC authentication, and AWS managed services.
+**A fully automated, security-first CI/CD lifecycle for a containerized Banking Application — from commit to cloud, with AI built in.**
 
-[![Java Version](https://img.shields.io/badge/Java-21-blue.svg)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-orange.svg)](.github/workflows/devsecops.yml)
-[![AWS OIDC](https://img.shields.io/badge/Security-OIDC-red.svg)](#phase-3-security-and-identity-configuration)
+<br>
+
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![OWASP ZAP](https://img.shields.io/badge/OWASP_ZAP-E3371E?style=for-the-badge&logo=owasp&logoColor=white)
+![TinyLlama](https://img.shields.io/badge/TinyLlama-7C3AED?style=for-the-badge&logo=ollama&logoColor=white)
+![Amazon ECR](https://img.shields.io/badge/Amazon_ECR-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Trivy](https://img.shields.io/badge/Trivy-1904DA?style=for-the-badge&logo=aqua&logoColor=white)
+![Semgrep](https://img.shields.io/badge/Semgrep-FF6B35?style=for-the-badge&logo=semgrep&logoColor=white)
+![Gitleaks](https://img.shields.io/badge/Gitleaks-E3371E?style=for-the-badge&logo=git&logoColor=white)
 
 </div>
 
-![dashboard](screenshots/1.png)
+---
+
+## ✦ Key Features
+
+| | Feature | Description |
+|---|---|---|
+| ⚡ | **Full CI/CD Pipeline** | Automated build, test, and deployment using GitHub Actions — triggered on every push to main. |
+| 🛡️ | **Security First** | Integrated Secret Scanning (Gitleaks), SAST (Semgrep), Container Scanning (Trivy), and DAST (OWASP ZAP). |
+| ☁️ | **Cloud Infrastructure** | Containerized deployment on AWS EC2 with Amazon ECR for versioned image management. |
+| 🔐 | **Secrets Management** | Secure handling of DB credentials and API keys via AWS Secrets Manager — zero hardcoded secrets. |
+| 🤖 | **Local AI Assistant** | TinyLlama via Ollama runs on-premise for secure, private AI-powered banking queries with no data leakage. |
+| 📦 | **Container Orchestration** | Docker Compose manages BankApp + MySQL 8.0 as healthy, networked containers on a single EC2 instance. |
 
 ---
 
-## Technical Architecture
+## ✦ Pipeline Overview — Automated Security Gates
 
-The application is deployed across a multi-tier, segmented AWS environment. The control plane leverages GitHub Actions with integrated security gates at every stage.
-
-```mermaid
-graph TD
-    subgraph "External Control Plane"
-        GH[GitHub Actions]
-        User[User Browser]
-    end
-
-    subgraph "AWS Infrastructure (VPC)"
-        subgraph "Application Tier"
-            AppEC2[App EC2 - Ubuntu/Docker]
-            DB[(MySQL 8.0 Container)]
-        end
-
-        subgraph "Artificial Intelligence Tier"
-            Ollama[Ollama EC2 - AI Engine]
-        end
-
-        subgraph "Identity & Secrets"
-            Secrets[AWS Secrets Manager]
-            OIDC[IAM OIDC Provider]
-        end
-
-        subgraph "Registry"
-            ECR[Amazon ECR]
-        end
-    end
-
-    GH -->|1. OIDC Authentication| OIDC
-    GH -->|2. Push Scanned Image| ECR
-    GH -->|3. SSH Orchestration| AppEC2
-    GH -->|4. DAST Scan| AppEC2
-    
-    User -->|Port 8080| AppEC2
-    AppEC2 -->|JDBC Connection| DB
-    AppEC2 -->|REST Integration| Ollama
-    AppEC2 -->|Runtime Secrets| Secrets
-    AppEC2 -->|Pull Image| ECR
+```
+┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
+│     CI / SECURITY   │────▶│     CI / BUILD       │────▶│     CD / DEPLOY      │
+│                     │     │                     │     │                     │
+│  ✓ Secret Scan      │     │  ✓ Build & Package  │     │  ✓ Deploy via SSH   │
+│  ✓ Lint Check       │     │  ✓ Container Scan   │     │  ✓ DAST Scan        │
+│  ✓ SAST Scan        │     │  ✓ Push to ECR      │     │  ✓ Verify Health    │
+└─────────────────────┘     └─────────────────────┘     └─────────────────────┘
 ```
 
 ---
 
-## Security Pipeline (DevSecOps Pipeline)
+## ✦ Project Visuals — See It In Action
 
-The CI/CD pipeline enforces **9 sequential security gates** before any code reaches production:
+### `01` — Automated CI/CD Pipeline
+> All stages passing — Secret Scan, Lint, SAST, Container Scan, ECR Push, EC2 Deploy, and OWASP ZAP — in 4 minutes flat.
 
-| Gate | Name | Tool | Purpose |
-| :---: | :--- | :--- | :--- |
-| 1 | Secret Scan | Gitleaks | Scans entire Git history for leaked secrets |
-| 2 | Lint | Checkstyle | Enforces Java Google-Style coding standards |
-| 3 | SAST | Semgrep | Scans Java source code for security flaws and OWASP Top 10 |
-| 4 | SCA | OWASP Dependency Check (first time run can take more than 30+ minutes) | Scans Maven dependencies for known CVEs |
-| 5 | Build | Maven | Compiles and packages the application |
-| 6 | Container Scan | Trivy | Scans the Docker image for OS and library vulnerabilities |
-| 7 | Push | Amazon ECR | Pushes the image only after Trivy passes |
-| 8 | Deploy | SSH / Docker Compose | Automated deployment to AWS EC2 |
-| 9 | DAST | OWASP ZAP | Dynamic attack surface scanning on live app |
+![GitHub Actions Pipeline](screenshots/GitHub_Actions_Pipeline.png)
 
 ---
 
-## Technology Stack
+### `02` — Amazon ECR — Container Registry
+> Three versioned Docker images pushed to the private ECR repository, each tagged with a unique commit hash for full traceability.
 
-- **Backend Framework**: Java 21, Spring Boot 3.4.1
-- **Security Strategy**: Spring Security, IAM OIDC, Secrets Manager
-- **Persistence Layer**: MySQL 8.0 (Docker Container)
-- **AI Integration**: Ollama (TinyLlama)
-- **DevOps Tooling**: Docker, Docker Compose, GitHub Actions, AWS CLI, jq
-- **Infrastructure**: Amazon EC2, Amazon ECR, Amazon VPC
+![Amazon ECR](screenshots/ECR.png)
 
 ---
 
-## Implementation Phases
+### `03` — Live Application Dashboard
+> BankApp running live on AWS EC2 at port 8080 — showing account balance, Deposit, Withdraw, and Transfer functionality.
 
-### Phase 1: AWS Infrastructure Initialization
-
-1. **Container Registry (ECR)**:
-
-   - Establish a private ECR repository named `devsecops-bankapp`.
-
-      ![ECR](screenshots/2.png)
-
-2. **Application Server (EC2)**:
-
-   - Deploy an Ubuntu 22.04 instance with below `User Data`.
-
-      ```bash
-      #!/bin/bash
-
-      sudo apt update 
-      sudo apt install -y docker.io docker-compose-v2 jq
-      sudo usermod -aG docker ubuntu
-      sudo newgrp docker
-      sudo snap install aws-cli --classic
-      ```
-
-   - Configure Security Group to open inbound rule for Port 22 (Management) and Port 8080 (Service).
-
-      > Better to give `name` to Security Group created.
-
-   - Create an IAM Instance Profile(IAM EC2 role) containing permissions:
-     - `AmazonEC2ContainerRegistryPowerUser`
-     - `AWSSecretsManagerClientReadOnlyAccess`
-
-        ![Permissions](screenshots/3.png)
-
-   - Attach it to Application EC2. Select EC2 -> Actions -> Security -> Modify IAM role -> Attach created IAM role.
-
-      ![IAM role](screenshots/4.png)
-   
-   - Connect to EC2 Instance and Run below command to check whether IAM role is working or not.
-
-      ```bash
-      aws sts get-caller-identity
-      ```
-
-      You will get your account details with IAM role assumed.
-
-3. **AI Engine Tier (Ollama)**:
-   - Deploy a dedicated Ubuntu EC2 instance.
-   - Open Inbound Port `11434` from the Application EC2 Security Group.
-
-      > Better to give `name` to Security Group created.
-    
-      ![ollama-sg](screenshots/8.png)
-
-   - Automate initialization using the [ollama-setup.sh](scripts/ollama-setup.sh) script via EC2 User Data.
-    
-      ![user-data](screenshots/9.png)
-
-   - Verify the AI engine is responsive and the model is pulled in `AI engine EC2`:
-
-     ```bash
-     ollama list
-     ```
-
-      ![ollama-list](screenshots/21.png)
+![BankApp Dashboard](screenshots/Dashboard.png)
 
 ---
 
-### Phase 2: Security and Identity Configuration
+### `04` — Integrated AI Assistant — TinyLlama
+> The on-premise AI Assistant powered by Ollama + TinyLlama answers banking queries in real-time, with zero data leaving the server.
 
-The deployment pipeline utilizes OpenID Connect (OIDC) for secure, keyless authentication between GitHub and AWS.
-
-1. **IAM Identity Provider**:
-   - Provider URL: `https://token.actions.githubusercontent.com`
-   - Audience: `sts.amazonaws.com`
-
-      ![identity-provider](screenshots/10.png)
-
-2. **Deployment Role**:
-   - Click on created `Identity provider`
-   - Asign & Create a role named `GitHubActionsRole`.
-   - Enter following details:
-      - `Identity provider`: Select created one.
-      - `Audience`: Select created one.
-      - `GitHub organization`: Your GitHub Username or Orgs Name where this repo is located.
-      - `GitHub repository`: Write the Repository name of this project. `(e.g, DevSecOps-Bankapp)`
-      - `GitHub branch`: branch to use for this project `(e.g, devsecops)`
-      - Click on `Next`
-
-      ![role](screenshots/11.png)
-
-   - Assign `AmazonEC2ContainerRegistryPowerUser` permissions.
-
-      ![iam permission](screenshots/12.png)
-
-   - Click on `Next`, Enter name of role and click on `Create role`.
-
-      ![iam role](screenshots/13.png)
+![AI Chatbot](screenshots/AI_chatbot.png)
 
 ---
 
-### Phase 3: Secrets and Pipeline Configuration
+### `05` — Docker Container Status
+> Both containers healthy — BankApp pulling the latest ECR image, and MySQL 8.0 running as the database backend on the EC2 instance.
 
-#### 1. AWS Secrets Manager
-Create a secret named `bankapp/prod-secrets` in `Other type of secret` with the following key-value pairs:
-
-| Secret Key | Description | Sample/Default Value |
-| :--- | :--- | :--- |
-| `DB_HOST` | The MySQL container service name | `db` |
-| `DB_PORT` | The database port | `3306` |
-| `DB_NAME` | The application database name | `bankappdb` |
-| `DB_USER` | The database username | `bankuser` |
-| `DB_PASSWORD` | The database password | `Test@123` |
-| `OLLAMA_URL` | The private URL for the AI tier | `http://<PRIVATE-IP>:11434` |
-
-![aws-ssm](screenshots/14.png)
-
-#### 2. GitHub Repository Secrets
-Configure the following Action Secrets within your GitHub repository settings:
-
-| Secret Name | Description |
-| :--- | :--- |
-| `AWS_ROLE_ARN` | The ARN of the `GitHubActionsRole` |
-| `AWS_REGION` | The AWS region where resources are deployed |
-| `AWS_ACCOUNT_ID` | Your 12-digit AWS account number |
-| `ECR_REPOSITORY` | The name of the ECR repository (`devsecops-bankapp`) |
-| `EC2_HOST` | The public IP address of the Application EC2 |
-| `EC2_USER` | The SSH username (default is `ubuntu`) |
-| `EC2_SSH_KEY` | The content of your private SSH key (`.pem` file) |
-| `NVD_API_KEY` | Free API key from [nvd.nist.gov](https://nvd.nist.gov/developers/request-an-api-key) for OWASP SCA scans |
-
-> **Note**: The `NVD_API_KEY` raises the NVD API rate limit from ~5 requests/30s to 50 requests/30s, reducing the OWASP Dependency Check scan time from 30+ minutes to under 8 minutes. Without it the SCA job will time out.
-
-#### Obtaining the NVD API Key
-
-**Step 1: Request the API Key**
-- Go to [https://nvd.nist.gov/developers/request-an-api-key](https://nvd.nist.gov/developers/request-an-api-key).
-- Enter your `Organzation name`, `email address`, and select `organization type`.
-- Accept **Terms of Use** and Click **Submit**.
-
-   ![request](screenshots/22.png)
-
-**Step 2: Activate the API Key**
-- Check your email inbox for a message from `nvd-noreply@nist.gov`.
-
-   ![email](screenshots/25.png)
-
-- Click the **activation link** in the email.
-- Enter `UUID` provided in email and Enter `Email` to activate
-- The link confirms your key and marks it as active.  
-
-   ![api-activate](screenshots/23.png)
-
-**Step 3: Get the API Key**
-- After clicking the activation link, the page will generate your API key.
-- Copy and save it securely.
-
-   ![api-key](screenshots/24.png)
-
-**Step 4: Add as GitHub Secret**
-- Go to your repository on GitHub.
-- Navigate to **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
-- Name: `NVD_API_KEY`
-- Value: Paste the copied API key.
-- Click **Add Secret**.
-
-![github-secret](screenshots/15.png)
+![Docker Container Status](screenshots/Docker_Container_Status.png)
 
 ---
 
-## Continuous Integration and Deployment
+## ✦ Tech Stack — Built With
 
-The DevSecOps lifecycle is orchestrated through the [DevSecOps Main Pipeline](.github/workflows/devsecops-main.yml), which securely sequences three modular workflows: [CI](.github/workflows/ci.yml), [Build](.github/workflows/build.yml), and [CD](.github/workflows/cd.yml). Together they enforce **9 sequential security gates** before any code reaches production. Every `git push` to the `main` or `devsecops` branch triggers the full pipeline automatically.
-
-| Gate | Job | Tool | Action |
-| :---: | :--- | :--- | :--- |
-| 1 | `gitleaks` | Gitleaks | **Strict**: Fails if any secrets are found in history. |
-| 2 | `lint` | Checkstyle | **Audit**: Reports style violations but doesn't block (Google Style). |
-| 3 | `sast` | Semgrep | **Strict**: Scans code for vulnerabilities. Fails on findings. |
-| 4 | `sca` | OWASP Dependency Check | **Strict**: Fails if any dependency has CVSS > 7.0. |
-| 5 | `build` | Maven | Standard build and test stage. |
-| 6 | `image_scan` | Trivy | **Strict**: Scans Docker image layers. Fails on any High/Critical CVE. |
-| 7 | `push_to_ecr` | Amazon ECR | Pushes the verified image to AWS ECR using OIDC. |
-| 8 | `deploy` | SSH / Docker Compose | Fetches secrets from AWS Secrets Manager and recreates the container. |
-| 9 | `dast` | OWASP ZAP | **Audit Mode**: Comprehensive scan that reports findings as artifacts, but does not block the pipeline. |
-
-All scan reports (OWASP, Trivy, ZAP) are uploaded as downloadable **Artifacts** in each GitHub Actions run, YOu can look into the **Artifacts**.
-
-- CI/CD
-
-   ![github-actions](screenshots/16.png)
-
-- Artifacts
-
-   ![artifacts](screenshots/26.png)
-   
----
-
-## Operational Verification
-
-- **Process Status**: `docker ps`
-
-  ![docker ps](screenshots/19.png)
-
-- **Application Working**:
-
-  ![app](screenshots/20.png)
-
-- **Database Connectivity**: 
-
-  ```bash
-  docker exec -it db mysql -u <USER> -p bankappdb -e "SELECT * FROM accounts;"
-  ```
-
-  ![mysql-result](screenshots/17.png)
-
-  > **ZAP** is automatically created by **DAST - OWASP ZAP Baseline Scan** job in [cd.yml](.github/workflows/cd.yml). Read more about it(How, Why it does) on google...
-
-- **Network Validation**: 
-
-  ```bash
-  nc -zv <OLLAMA-PRIVATE-IP> 11434
-  ```
-
-  ![ollama-success](screenshots/18.png)
+| Category | Technology |
+|---|---|
+| ☕ Backend | Java / Spring Boot |
+| 🐬 Database | MySQL 8.0 |
+| 🐳 Containers | Docker & Docker Compose |
+| ⚙️ CI/CD | GitHub Actions |
+| ☁️ Cloud | AWS EC2 |
+| 📦 Registry | Amazon ECR |
+| 🔑 Secrets | AWS Secrets Manager |
+| 🤖 AI Engine | Ollama (TinyLlama) |
+| 🔍 Secret Scan | Gitleaks |
+| 🧠 SAST | Semgrep |
+| 🔬 Container Sec | Trivy |
+| 🕷️ DAST | OWASP ZAP |
 
 ---
 
+## ✦ Security Workflow — Every Push Is Verified
+
+**`01` — Secret Scanning — Gitleaks**
+Scans every commit for accidentally exposed credentials, API keys, tokens, and connection strings before they ever reach production.
+
+**`02` — Static Application Security Testing — Semgrep**
+Performs code-level analysis to detect injection flaws, misconfigurations, and security anti-patterns in the Java source code.
+
+**`03` — Container Image Scanning — Trivy**
+Checks the Docker image for known CVEs in base images, OS packages, and application dependencies before pushing to ECR.
+
+**`04` — Dynamic Application Security Testing — OWASP ZAP**
+Runs a ZAP Baseline Scan against the live deployed application to discover runtime vulnerabilities, XSS, and injection points.
+
+---
+
+## ✦ Getting Started — Run It Locally
+
+**Prerequisites:** Docker, Docker Compose, Ollama, AWS CLI configured.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/banking-app-devsecops.git
+cd banking-app-devsecops
+```
+
+```bash
+# 2. Pull TinyLlama via Ollama
+ollama pull tinyllama
+```
+
+```bash
+# 3. Start all services
+docker-compose up -d
+
+# 4. Verify containers are healthy
+docker ps
+```
+
+---
+
+<div align="center">
+
+         BankApp DevSecOps Pipeline
+
+`Java` · `Spring Boot` · `Docker` · `GitHub Actions` · `AWS` · `Ollama` · `TinyLlama`
+
+</div>
