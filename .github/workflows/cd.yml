@@ -44,7 +44,8 @@ jobs:
             echo "DB_NAME=$(jq -r .DB_NAME secrets.json)" >> .env
             echo "DB_USER=$(jq -r .DB_USER secrets.json)" >> .env
             echo "DB_PASSWORD=$(jq -r .DB_PASSWORD secrets.json)" >> .env
-            echo "OLLAMA_URL=$(jq -r .OLLAMA_URL secrets.json)" >> .env
+            echo "OLLAMA_URL=http://172.17.0.1:11434" >> .env
+            echo "OLLAMA_MODEL=tinyllama" >> .env
             
             # Docker variables mapping
             echo "ECR_REGISTRY=$ECR_REGISTRY" >> .env
